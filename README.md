@@ -1,4 +1,4 @@
-# YewBuilder v1.0.3 — iOS app
+# YewBuilder v1.0.4 — iOS app
 
 Enter five files, tap **Build & Deploy**, and a Rust Yew/WASM site goes
 live on your Hostek FTP host.
@@ -130,6 +130,7 @@ trunk installed, the same request builds and returns `dist/`.
 
 ## Changelog
 
+- **v1.0.4** — Fix only: the app can now reach the builder server over Tailscale. The Info.plist had both `NSAllowsLocalNetworking` and `NSAllowsArbitraryLoads` set — and since iOS 10, the presence of any other ATS key makes the system IGNORE `NSAllowsArbitraryLoads`. So cleartext to the home LAN (`192.168.x.x`, covered by the local-networking key) worked, but cleartext to a Tailscale address (`100.64.x.x`, not RFC 1918) failed with -1022 "App Transport Security policy requires the use of a secure connection" — while Safari, which has its own policy, connected fine. The plist now has `NSAllowsArbitraryLoads` as the ONLY key in the ATS dictionary, which covers LAN and Tailscale alike. Do not add `NSExceptionDomains` or any other ATS key — that would switch `NSAllowsArbitraryLoads` off again. No app code changed (app version bumped to 1.0.4 / build 5 only so the tag and build number stay consistent).
 - **v1.0.3** — The deploy folder is now a per-build input, not a stuck setting. The Build tab has an editable Deploy folder field (same setting as Settings, kept in sync): whatever is entered there is the folder that build goes to, and it becomes the default for next time. The phone sends the folder with the build request; server.py validates it (rejects `..` escapes), normalises it, logs it, and echoes it back, and the phone uploads to exactly that echoed folder. Missing folders are created automatically on the FTP server. Nothing is hardcoded — `yew-builder` was only ever the first folder typed in.
 - **v1.0.2** — Fix only: Open live site no longer includes `public_html` in the link. On Hostek, `public_html` is the web root, so `/public_html/yew-builder` links to `mikegyver-studio.si/yew-builder/` (FTP upload path unchanged). Verified on a 12-case table.
 - **v1.0.1** — Fix only: `server/run-server.ps1` rewritten in pure ASCII. v1.0.0 shipped with three UTF-8 em dashes in that script; Windows PowerShell 5.1 reads .ps1 as ANSI, mangled them to `â€”`, and the script would not parse at all. No app code changed (app version bumped to 1.0.1 / build 2 only so the tag and build number stay consistent).

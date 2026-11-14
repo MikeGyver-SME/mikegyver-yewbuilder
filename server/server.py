@@ -213,13 +213,31 @@ class Handler(BaseHTTPRequestHandler):
                               "deploy_path": deploy_path, "files": built})
 
 
+class QuietServer(ThreadingHTTPServer):
+    """ThreadingHTTPServer that stays quiet when a client just goes away.
+
+    The iPhone closes its keep-alive connection after a request finishes,
+    and Python's http.server treats that as an error and prints a full
+    traceback (ConnectionResetError, WinError 10054 on Windows). The
+    build already succeeded by then — the POST returned 200 before the
+    phone hung up — so it is log noise, not a failure. Swallow the
+    three "client went away" errors; anything else still gets logged.
+    """
+
+    def handle_error(self, request, client_address):
+        exc = sys.exc_info()[1]
+        if isinstance(exc, (ConnectionResetError, BrokenPipeError, ConnectionAbortedError)):
+            return
+        super().handle_error(request, client_address)
+
+
 def main():
     port = int(os.environ.get("PORT", "8080"))
     if len(sys.argv) > 1:
         port = int(sys.argv[1])
     print(f"YewBuilder server on http://0.0.0.0:{port}  (trunk: {tool_version(['trunk', '--version'])})")
     print("POST /build with the 5 files; GET /health to check the toolchain.")
-    ThreadingHTTPServer(("0.0.0.0", port), Handler).serve_forever()
+    QuietServer(("0.0.0.0", port), Handler).serve_forever()
 
 
 if __name__ == "__main__":

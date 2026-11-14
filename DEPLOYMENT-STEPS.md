@@ -30,6 +30,9 @@ The workflow fails without these, even with everything else in place.
 
 ```powershell
 # Extract yewbuilder-v1.0.3.zip first (E:\Downloads is the default).
+# NOTE: the zip contains an inner yewbuilder\ folder, so the script is
+# one level deeper than the folder you extracted into. Step into it first:
+Set-Location E:\Downloads\yewbuilder-v1.0.3\yewbuilder
 powershell -ExecutionPolicy Bypass -File .\scripts\push-yewbuilder.ps1
 # uses defaults, tags v1.0.3
 ```

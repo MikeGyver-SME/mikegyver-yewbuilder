@@ -19,18 +19,16 @@
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.3</string>
+	<string>1.0.4</string>
 	<key>CFBundleVersion</key>
-	<string>4</string>
+	<string>5</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<!-- The builder server is the user's own machine on the local network, usually plain http:// — not a public https site. FTP itself is not HTTP and is unaffected by this setting. -->
-		<key>NSAllowsLocalNetworking</key>
-		<true/>
+		<!-- The builder server is the user's own machine - on the home LAN as plain http://192.168.x.x, or over Tailscale as plain http://100.x.x.x - never a public https site. FTP itself is not HTTP and is unaffected by this setting. NSAllowsArbitraryLoads must be the ONLY key in this dictionary: since iOS 10, the presence of NSAllowsLocalNetworking (or any other ATS key, including NSExceptionDomains) makes the system IGNORE NSAllowsArbitraryLoads, and then cleartext to a non-RFC1918 address such as a Tailscale 100.64.x.x IP fails with -1022 even though the LAN address works. Do not add another key here. -->
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
