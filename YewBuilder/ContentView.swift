@@ -79,11 +79,30 @@ struct ContentView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             row("Builder", store.builderURL.isEmpty ? "Not set — see Settings" : store.builderURL)
                             row("FTP", "\(store.ftpUsername) @ \(store.ftpHost):\(store.ftpPort)")
-                            row("Remote folder", store.remotePath)
                             row("Password", store.hasSavedPassword ? "Saved on this phone" : "Not saved yet")
                             row("Live site", store.siteURL)
                         }
                         .font(.subheadline)
+                    }
+
+                    // Deploy folder — editable here, per build, not just in
+                    // Settings. Whatever is entered here is the folder THIS
+                    // build goes to; it is saved as the default for next
+                    // time. Nothing is hardcoded: the first build went to
+                    // /public_html/yew-builder only because that is what
+                    // was typed in. Missing folders are created on the
+                    // server automatically, and a leading public_html is
+                    // dropped from the Live site link (it is the web root).
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Deploy folder (FTP)")
+                            .font(.subheadline).bold()
+                        TextField("/public_html/my-app", text: $store.remotePath)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                            .textFieldStyle(.roundedBorder)
+                            .font(.system(size: 15, design: .monospaced))
+                        Text("Each build uses whatever is entered here. / = site root. Folders that do not exist yet are created for you.")
+                            .font(.caption).foregroundStyle(.secondary)
                     }
 
                     Button(action: startBuild) {
@@ -178,7 +197,7 @@ struct ContentView: View {
                     }
                     TextField("Remote folder (/ = site root)", text: $store.remotePath)
                         .autocapitalization(.none).disableAutocorrection(true)
-                    Text("Example: /my-app deploys to mikegyver-studio.si/my-app/")
+                    Text("Example: /my-app deploys to mikegyver-studio.si/my-app/. On Hostek, /public_html is the web root, so /public_html/my-app links to the same place — the app drops public_html from the link, but still uploads there.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
 
@@ -276,11 +295,21 @@ struct ContentView: View {
         }
 
         do {
-            // Step 1 — build on the server.
-            let response = try await BuilderService.build(baseURL: builderURL, files: store.buildFiles)
+            // Step 1 — build on the server. The deploy folder goes with
+            // the request: the server validates and normalises it and
+            // echoes it back, and this build uploads to exactly that
+            // echoed folder — whatever was entered on the Build tab.
+            let response = try await BuilderService.build(
+                baseURL: builderURL, files: store.buildFiles,
+                deployPath: store.remotePath)
             store.log("Build succeeded. Server log:")
             for line in response.log.split(separator: "\n") { store.log(String(line)) }
             store.log("Built \(response.files.count) files.")
+            if let echoed = response.deployPath, !echoed.isEmpty, echoed != store.remotePath {
+                store.remotePath = echoed
+                store.log("Deploy folder normalised to \(echoed).")
+            }
+            store.log("Deploying to \(store.remotePath) — folders that do not exist yet will be created.")
 
             // Step 2 — upload from this phone over FTP.
             store.buildPhase = .uploading

@@ -115,15 +115,26 @@ final class FTPClient {
         }
     }
 
+    /// Create the deploy folder if it does not exist yet, then leave the
+    /// session sitting inside it, so every STOR after this lands there.
+    /// Walks down one level at a time (MKD creates one level only).
+    /// Whatever folder was entered is used as-is — no folder name is
+    /// ever assumed or hardcoded here.
     private func ensureDirectory(fd: Int32, reader: SocketReader, _ dir: String) throws {
         let clean = dir.trimmingCharacters(in: .whitespaces)
         guard !clean.isEmpty, clean != "/" else { return }
         let parts = clean.split(separator: "/").map(String.init)
-        // Walk down from root, creating each level that is missing.
+        // Start from the account root. The reply is deliberately
+        // ignored: if CWD / fails, carry on from wherever login left us
+        // (on Hostek that is the account root) — a failed root step must
+        // not fail a deploy that would otherwise work.
         _ = try sendCommand(fd: fd, reader: reader, "CWD /")
         for part in parts {
             let reply = try sendCommand(fd: fd, reader: reader, "CWD \(part)")
             if reply.code == 550 {
+                // Missing level: create it, then step into it. MKD 550
+                // means "already exists" (created between the two
+                // commands) — also fine, just step in.
                 let mk = try sendCommand(fd: fd, reader: reader, "MKD \(part)")
                 guard mk.code == 257 || mk.code == 550 else {
                     throw FTPError.unexpectedReply(mk.text)

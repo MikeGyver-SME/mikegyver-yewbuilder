@@ -22,6 +22,11 @@ enum BuilderService {
 
     struct BuildRequest: Codable {
         let files: [BuildFile]
+        /// The FTP folder this build will deploy to, as entered on the
+        /// Build tab. The server validates and normalises it and echoes
+        /// it back; the phone uploads to the echoed value. Optional so
+        /// older servers that ignore it still build.
+        let deploy_path: String?
     }
 
     struct BuiltFile: Codable {
@@ -35,6 +40,12 @@ enum BuilderService {
         let success: Bool
         let log: String
         let files: [BuiltFile]
+        /// The deploy folder, normalised by the server ("/" for the site
+        /// root). Nil when the server is an older version that does not
+        /// echo it — then the phone keeps the folder it sent.
+        let deploy_path: String?
+
+        var deployPath: String? { deploy_path }
     }
 
     struct HealthResponse: Codable {
@@ -86,13 +97,13 @@ enum BuilderService {
 
     /// Send the five files, wait for the build (first builds can take a
     /// couple of minutes while cargo fetches crates), return dist/ files.
-    static func build(baseURL: URL, files: [BuildFile]) async throws -> BuildResponse {
+    static func build(baseURL: URL, files: [BuildFile], deployPath: String? = nil) async throws -> BuildResponse {
         let url = baseURL.appendingPathComponent("build")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = 300
-        request.httpBody = try JSONEncoder().encode(BuildRequest(files: files))
+        request.httpBody = try JSONEncoder().encode(BuildRequest(files: files, deploy_path: deployPath))
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw BuilderError.noData }
         guard (200..<300).contains(http.statusCode) else {

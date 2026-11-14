@@ -1,4 +1,4 @@
-# YewBuilder — deployment steps (v1.0.0)
+# YewBuilder — deployment steps (v1.0.3)
 
 Same proven pipeline as SSTV Studio / PodMix / Voyager Light-Day.
 Do each step once, in order.
@@ -29,9 +29,9 @@ The workflow fails without these, even with everything else in place.
 ## 3. Push + tag (PowerShell on Windows)
 
 ```powershell
-# Extract yewbuilder-v1.0.0.zip first (E:\Downloads is the default).
+# Extract yewbuilder-v1.0.3.zip first (E:\Downloads is the default).
 powershell -ExecutionPolicy Bypass -File .\scripts\push-yewbuilder.ps1
-# uses defaults, tags v1.0.0
+# uses defaults, tags v1.0.3
 ```
 
 The tag push starts the "Build and upload YewBuilder to TestFlight"
@@ -59,8 +59,11 @@ did not trigger the pipeline you think it did.
 2. In the app: Settings → Builder server →
    `http://<PC-LAN-IP>:8080` → **Test builder connection** (should show
    the trunk version).
-3. Settings → FTP: host, username and port are pre-filled. Set Remote
-   folder to `/` for the site root, or e.g. `/my-app` for a subfolder.
+3. Settings → FTP: host, username and port are pre-filled. The deploy
+   folder is also editable right on the Build tab before each build —
+   whatever is entered there is where that build goes (`/` for the
+   site root, e.g. `/public_html/my-app` for a subfolder). Folders
+   that do not exist yet are created automatically.
 4. Tap the **Build** tab → **Build & Deploy**. The first time, it asks
    for the FTP password — enter it there, on the phone. It saves to the
    Keychain, so later builds do not ask again.

@@ -41,8 +41,14 @@ source code to it in plain text otherwise).
 ## API
 
 - `GET /health` → `{"ok": true, "trunk": "trunk 0.22.1", "cargo": "..."}`
-- `POST /build` with `{"files": [{"path": "index.html", "content": "..."}, ...]}`
-  → `{"success": true, "log": "...", "files": [{"path": "index.html", "content_base64": "..."}]}`
+- `POST /build` with `{"files": [{"path": "index.html", "content": "..."}, ...], "deploy_path": "/public_html/my-app"}`
+  → `{"success": true, "log": "...", "deploy_path": "/public_html/my-app", "files": [{"path": "index.html", "content_base64": "..."}]}`
+  `deploy_path` is optional (older clients omit it; it defaults to
+  `/`). The server validates it — `..` escapes, backslashes and NUL
+  bytes are rejected with HTTP 400 — normalises it, logs it as
+  `deploy target: ...`, and echoes it back. The phone uploads to
+  exactly that echoed folder. The server itself never deploys
+  anywhere; it only builds.
 
 Only these five paths are accepted: `index.html`, `styles.css`,
 `Cargo.toml`, `Trunk.toml`, `src/main.rs`. Anything else is rejected.

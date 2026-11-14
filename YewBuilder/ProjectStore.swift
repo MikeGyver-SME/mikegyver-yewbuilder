@@ -56,11 +56,24 @@ final class ProjectStore: ObservableObject {
     }
 
     var siteURL: String {
-        // Remote path "/electron-lab" -> https://mikegyver-studio.si/electron-lab/
-        let path = remotePath.trimmingCharacters(in: .whitespaces)
-        if path.isEmpty || path == "/" { return "https://mikegyver-studio.si/" }
-        let clean = path.hasPrefix("/") ? String(path.dropFirst()) : path
-        return "https://mikegyver-studio.si/\(clean)/"
+        // Hostek/cPanel layout: the FTP account lands above the web root,
+        // and public_html IS the domain root. Files uploaded to
+        // /public_html/yew-builder are served at
+        // mikegyver-studio.si/yew-builder/, NOT
+        // mikegyver-studio.si/public_html/yew-builder/.
+        // So a leading public_html segment is dropped from the PUBLIC
+        // LINK only — the FTP upload path itself is unchanged, and a
+        // public_html anywhere else in the path is left alone.
+        //   "/"                       -> https://mikegyver-studio.si/
+        //   "/my-app"                 -> https://mikegyver-studio.si/my-app/
+        //   "/public_html/yew-builder"-> https://mikegyver-studio.si/yew-builder/
+        //   "/public_html"            -> https://mikegyver-studio.si/
+        let trimmed = remotePath.trimmingCharacters(in: .whitespaces)
+        var parts = trimmed.split(separator: "/").map(String.init)
+        if parts.first?.lowercased() == "public_html" { parts.removeFirst() }
+        let path = parts.joined(separator: "/")
+        if path.isEmpty { return "https://mikegyver-studio.si/" }
+        return "https://mikegyver-studio.si/\(path)/"
     }
 
     private var projectDir: URL {

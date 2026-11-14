@@ -14,6 +14,10 @@
     rustup target add wasm32-unknown-unknown
     cargo install trunk
 
+  NOTE: this file must stay pure ASCII. Windows PowerShell 5.1 reads
+  .ps1 files as ANSI, so a UTF-8 em dash or curly quote gets mangled
+  and breaks parsing (this exact bug killed v1.0.0 of this script).
+
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File .\run-server.ps1
 .EXAMPLE
@@ -30,13 +34,13 @@ function Test-Command($Name) {
 }
 
 if (-not (Test-Command 'python')) { throw "Python not found. Install it from python.org or the Microsoft Store, then re-run this script." }
-if (-not (Test-Command 'cargo')) { throw "cargo not found. Run: winget install Rustlang.Rustup  — then close and reopen PowerShell and run: rustup default stable" }
-if (-not (Test-Command 'trunk')) { throw "trunk not found. Run: cargo install trunk  (after: rustup target add wasm32-unknown-unknown)" }
+if (-not (Test-Command 'cargo')) { throw "cargo not found. Run: winget install Rustlang.Rustup - then close and reopen PowerShell and run: rustup default stable" }
+if (-not (Test-Command 'trunk')) { throw "trunk not found. Run: cargo install trunk (after: rustup target add wasm32-unknown-unknown)" }
 
 $trunkVersion = trunk --version
 $cargoVersion = cargo --version
-Write-Host "YewBuilder server — $cargoVersion / $trunkVersion" -ForegroundColor Green
-Write-Host "Listening on http://0.0.0.0:$Port  — iPhone Settings > Builder server: http://<this-PC-LAN-IP>:$Port" -ForegroundColor Cyan
+Write-Host "YewBuilder server - $cargoVersion / $trunkVersion" -ForegroundColor Green
+Write-Host "Listening on http://0.0.0.0:$Port - iPhone Settings > Builder server: http://<this-PC-LAN-IP>:$Port" -ForegroundColor Cyan
 Write-Host "Press Ctrl+C to stop." -ForegroundColor DarkGray
 
 Set-Location $PSScriptRoot

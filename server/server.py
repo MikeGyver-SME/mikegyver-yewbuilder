@@ -31,9 +31,16 @@ Windows (PowerShell), in this folder — needs Rust + trunk first:
 API
 ---
   GET  /health  -> {"ok": true, "trunk": "trunk 0.22.1", "cargo": "..."}
-  POST /build   -> {"files": [{"path": "index.html", "content": "..."}, ...]}
+  POST /build   -> {"files": [{"path": "index.html", "content": "..."}, ...],
+                    "deploy_path": "/public_html/my-app"}   (optional)
                 <- {"success": true, "log": "...",
+                    "deploy_path": "/public_html/my-app",
                     "files": [{"path": "index.html", "content_base64": "..."}]}
+  The deploy folder is whatever the user entered on the phone's Build
+  tab — the server validates it (rejects ".." escapes), normalises it
+  ("/" for the site root), logs it, and echoes it back. The phone
+  uploads to exactly that echoed folder. The server itself never
+  deploys anywhere: it only builds.
   On build failure: {"success": false, "log": "<trunk output>", "files": []}
   On bad input: HTTP 400 with {"success": false, "log": "...", "files": []}
 """
@@ -52,6 +59,31 @@ from pathlib import Path
 ALLOWED_PATHS = {"index.html", "styles.css", "Cargo.toml", "Trunk.toml", "src/main.rs"}
 MAX_BODY_BYTES = 5 * 1024 * 1024
 BUILD_TIMEOUT_SECONDS = 300
+
+
+def normalise_deploy_path(raw):
+    """Validate + normalise the deploy folder the phone sends.
+
+    The folder is whatever the user entered on the Build tab — nothing
+    is hardcoded here (yew-builder was only ever the first example).
+    Returns the normalised path ("/" for the site root), or raises
+    ValueError for a path that must never be used as a deploy target.
+    """
+    if raw is None:
+        return "/"
+    if not isinstance(raw, str):
+        raise ValueError("deploy_path must be a string")
+    path = raw.strip()
+    if not path or path == "/":
+        return "/"
+    if "\x00" in path or "\\" in path:
+        raise ValueError(f"Bad deploy_path: {raw!r} (no backslashes or NUL bytes)")
+    parts = [p for p in path.split("/") if p not in ("", ".")]
+    if any(p == ".." for p in parts):
+        raise ValueError(f"Bad deploy_path: {raw!r} ('..' would escape the deploy folder)")
+    if not parts:
+        return "/"
+    return "/" + "/".join(parts)
 
 
 def run(cmd, cwd=None, timeout=30):
@@ -170,8 +202,15 @@ class Handler(BaseHTTPRequestHandler):
         if not isinstance(files, list) or not files:
             self._send_json(400, {"success": False, "log": "Expected {\"files\": [...]} with the 5 project files.", "files": []})
             return
+        try:
+            deploy_path = normalise_deploy_path(payload.get("deploy_path"))
+        except ValueError as exc:
+            self._send_json(400, {"success": False, "log": str(exc), "files": []})
+            return
         success, log, built = build_project(files)
-        self._send_json(200, {"success": success, "log": log, "files": built})
+        log = f"deploy target: {deploy_path}\n" + log
+        self._send_json(200, {"success": success, "log": log,
+                              "deploy_path": deploy_path, "files": built})
 
 
 def main():
