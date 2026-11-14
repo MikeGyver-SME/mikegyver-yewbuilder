@@ -1,0 +1,13 @@
+import SwiftUI
+
+@main
+struct YewBuilderApp: App {
+    @StateObject private var store = ProjectStore()
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .environmentObject(store)
+        }
+    }
+}

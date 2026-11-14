@@ -1,0 +1,10 @@
+[build]
+target = "index.html"
+dist = "dist"
+# Subfolder-safe: Trunk defaults to root-absolute paths ("/x.js"), which
+# 404 when the site lives in a subfolder. "./" makes every rebuild emit
+# relative paths, so no post-build fix is needed.
+public_url = "./"
+# Keep filenames stable across rebuilds so index.html and the uploaded
+# files can never drift apart (no more hashed names).
+filehash = false

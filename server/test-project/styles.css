@@ -1,0 +1,9 @@
+* { box-sizing: border-box; }
+body { margin: 0; background: #060d1f; color: #e8eefc; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.wrap { max-width: 640px; margin: 0 auto; padding: 48px 20px; text-align: center; }
+h1 { font-size: 36px; margin: 0 0 8px; }
+p { color: #b9c6e8; line-height: 1.6; }
+.count { font-size: 64px; font-weight: 800; color: #f5c542; margin: 16px 0; }
+button { background: #f5c542; color: #111; border: 0; border-radius: 10px; padding: 12px 22px; font-size: 16px; font-weight: 700; cursor: pointer; }
+button:active { transform: scale(0.97); }
+footer { margin-top: 32px; color: #7e8fb5; font-size: 13px; }
